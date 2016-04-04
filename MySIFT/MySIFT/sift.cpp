@@ -62,8 +62,10 @@ bool show_sift_desc(Mat & img, list<feature> &feature_list, const char out_file_
 		y = it->y * it->im_size;
 		p2_x = x + it->ori_vec_mag/10*cos(it->ori_vec_angle);
 		p2_y = y + it->ori_vec_mag/10*sin(it->ori_vec_angle);
+		//cout << "scl:" << it->scl << endl;
+		//cout << "im_size: " << it->im_size << endl;
 		arrowedLine(img, Point(x, y), Point(p2_x, p2_y), Scalar(255, 0, 0), 1);
-		//circle(img, Point(it->x, it->y), 2, Scalar(0, 255, 0), 3, LINE_AA);
+		circle(img, Point(x, y), it->scl * it->im_size, Scalar(0, 255, 0), 1, LINE_AA);
 	}
 	imwrite(out_file_name, img);
 	char order;
@@ -438,7 +440,8 @@ bool _create_gaus_pyr(Mat & base_img, Mat * Octaves[SIFT_OCTAVE][SIFT_SCALE_DEGR
 	{
 		if (i > 0)
 		{
-			copy_base_im.resize(copy_base_im.rows / 2);
+			//copy_base_im.resize(copy_base_im.rows / 2);
+			pyrDown(copy_base_im, copy_base_im, Size(copy_base_im.cols / 2, copy_base_im.rows / 2));
 		}
 		for (int j = 0; j < SIFT_SCALE_DEGREE + 3; ++j)
 		{

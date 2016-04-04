@@ -7,7 +7,7 @@ using namespace cv;
 
 /** default sigma for initial gaussian smoothing */
 #define SIFT_FIRST_SIGMA 1.6
-#define SIFT_OCTAVE 6
+#define SIFT_OCTAVE 12
 #define SIFT_SCALE_DEGREE 3 
 #define SIFT_HESSIAN_EDGE_THR 3
 #define SIFT_DoG_THR 3
@@ -20,7 +20,7 @@ using namespace cv;
 #define SIFT_ORI_RADIUS 3.0 * SIFT_ORI_SIG_FCTR
 #define FEATURE_MAX_D 128
 #define EXTREMA_DIST_THR 0.1
-#define SIFT_EXTREMA_HARRIS 20
+#define SIFT_EXTREMA_HARRIS 0.5
 struct feature
 {
 	double x;                      /**< x coord */
