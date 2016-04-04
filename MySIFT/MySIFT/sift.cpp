@@ -11,13 +11,46 @@ bool _get_extrema(Mat * DoG_octaves[SIFT_OCTAVE][SIFT_SCALE_DEGREE + 2], Mat *Ga
 Mat * get_dog(Mat * Gaus_img, Mat * Next_Gaus_img);
 bool _erase_dog_octaves(Mat *Octaves[SIFT_OCTAVE][SIFT_SCALE_DEGREE + 2], int octave_num, int scale_num);
 bool _erase_gaus_octaves(Mat *Octaves[SIFT_OCTAVE][SIFT_SCALE_DEGREE + 3], int octave_num, int scale_num);
-bool _is_extremum(Mat * p_forward_DoG, Mat * p_this_DoG, Mat * p_Next_DoG, int r, int c);
+bool _is_extremum(Mat * p_forward_DoG, Mat * p_this_DoG, Mat * p_Next_DoG, Mat * p_this_gaus_im, int r, int c);
 int _calc_mag_angle(int bins_size, int x, int y, Mat * pGaussian_img, double & tmp_mag);
 bool _get_dog_pyr(Mat * Gaussian_Octaves[SIFT_OCTAVE][SIFT_SCALE_DEGREE + 3], Mat * DoG_octaves[SIFT_OCTAVE][SIFT_SCALE_DEGREE + 2]);
 bool _get_accurate_pos(Mat * p_forward_DoG, Mat * p_this_DoG, Mat * p_Next_DoG, int & x, int & y, double sigmas[3]);
 bool _get_feature_ori(feature & new_feature, Mat * pGaussian_img);
+bool _is_this_too_edge(Mat * p_this_gaus_im, int r, int c);
 
 
+bool _is_this_too_edge(Mat * p_this_gaus_im, int r, int c)
+{
+	double thr = 0;
+	double index = 0;
+	double this_val = p_this_gaus_im->at<float>(r, c);
+	double dxx = p_this_gaus_im->at<float>(r, c + 1) + p_this_gaus_im->at<float>(r, c - 1) - 2 * this_val;
+	double dyy = p_this_gaus_im->at<float>(r + 1, c) + p_this_gaus_im->at<float>(r - 1, c) - 2 * this_val;
+	double dxy = p_this_gaus_im->at<float>(r + 1, c + 1) - p_this_gaus_im->at<float>(r + 1, c - 1) +\
+						p_this_gaus_im->at<float>(r - 1, c + 1) - p_this_gaus_im->at<float>(r - 1, c - 1);
+	dxy /= 4.0;
+	double tr = dxx + dyy;
+	double det = dxx* dyy - pow(dxy, 2);
+	if (det < 0)
+	{
+		return true;
+	}
+	thr = pow(SIFT_HESSIAN_EDGE_THR + 1, 2) / SIFT_HESSIAN_EDGE_THR;
+	index = pow(tr, 2) / det;
+
+	//if (index > thr || tr < SIFT_EXTREMA_HARRIS)
+	//{
+	//	return true;
+	//}
+	if (index > thr)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
 bool show_sift_desc(Mat & img, list<feature> &feature_list, const char out_file_name[])
 {
 	double p2_x = 0, p2_y = 0;
@@ -71,7 +104,7 @@ bool _get_extrema(Mat * DoG_octaves[SIFT_OCTAVE][SIFT_SCALE_DEGREE + 2], Mat *Ga
 			{
 				for (int c = 0; c < DoG_octaves[oct][i]->cols; ++c)
 				{
-					if (_is_extremum(DoG_octaves[oct][i-1], DoG_octaves[oct][i], DoG_octaves[oct][i+1], r, c))
+					if (_is_extremum(DoG_octaves[oct][i - 1], DoG_octaves[oct][i], DoG_octaves[oct][i + 1], Gaussian_Octaves[oct][i], r, c))
 					{
 						//Got an extrema
 						x_extr = c;
@@ -246,7 +279,7 @@ Mat * get_dog(Mat * Gaus_img, Mat * Next_Gaus_img)
 	return pDoG;
 }
 
-bool _is_extremum(Mat * p_forward_DoG, Mat * p_this_DoG, Mat * p_Next_DoG, int r, int c)
+bool _is_extremum(Mat * p_forward_DoG, Mat * p_this_DoG, Mat * p_Next_DoG, Mat * p_this_gaus_im, int r, int c)
 {
 	int dx = 0;
 	int dy = 0;
@@ -339,21 +372,7 @@ bool _is_extremum(Mat * p_forward_DoG, Mat * p_this_DoG, Mat * p_Next_DoG, int r
 	//	return false;
 	//}
 	// Check if it is a point in edge.
-	double dxx = p_this_DoG->at<float>(r, c + 1) + p_this_DoG->at<float>(r, c - 1) - 2 * this_val;
-	double dyy = p_this_DoG->at<float>(r + 1, c) + p_this_DoG->at<float>(r - 1, c) - 2 * this_val;
-	double dxy = p_this_DoG->at<float>(r + 1, c + 1) - p_this_DoG->at<float>(r + 1, c - 1) +\
-					p_this_DoG->at<float>(r - 1, c + 1) - p_this_DoG->at<float>(r - 1, c - 1);
-	dxy /= 4.0;
-	double tr = dxx + dyy;
-	double det = dxx* dyy - pow(dxy, 2);
-	if (det < 0)
-	{
-		return false;
-	}
-	thr = pow(SIFT_HESSIAN_EDGE_THR + 1, 2) / SIFT_HESSIAN_EDGE_THR;
-	index = pow(tr, 2) / det;
-
-	if (index > thr)
+	if (_is_this_too_edge(p_this_gaus_im, r, c))
 	{
 		return false;
 	}
@@ -361,6 +380,29 @@ bool _is_extremum(Mat * p_forward_DoG, Mat * p_this_DoG, Mat * p_Next_DoG, int r
 	{
 		return true;
 	}
+
+	//double dxx = p_this_DoG->at<float>(r, c + 1) + p_this_DoG->at<float>(r, c - 1) - 2 * this_val;
+	//double dyy = p_this_DoG->at<float>(r + 1, c) + p_this_DoG->at<float>(r - 1, c) - 2 * this_val;
+	//double dxy = p_this_DoG->at<float>(r + 1, c + 1) - p_this_DoG->at<float>(r + 1, c - 1) +\
+	//				p_this_DoG->at<float>(r - 1, c + 1) - p_this_DoG->at<float>(r - 1, c - 1);
+	//dxy /= 4.0;
+	//double tr = dxx + dyy;
+	//double det = dxx* dyy - pow(dxy, 2);
+	//if (det < 0)
+	//{
+	//	return false;
+	//}
+	//thr = pow(SIFT_HESSIAN_EDGE_THR + 1, 2) / SIFT_HESSIAN_EDGE_THR;
+	//index = pow(tr, 2) / det;
+
+	//if (index > thr)
+	//{
+	//	return false;
+	//}
+	//else
+	//{
+	//	return true;
+	//}
 
 }
 
