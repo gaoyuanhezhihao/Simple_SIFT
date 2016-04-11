@@ -18,7 +18,34 @@ bool _get_accurate_pos(Mat * p_forward_DoG, Mat * p_this_DoG, Mat * p_Next_DoG, 
 bool _get_feature_ori(feature & new_feature, Mat * pGaussian_img);
 bool _is_this_too_edge(Mat * p_this_gaus_im, int r, int c);
 
+bool _is_DoG_too_edge(Mat * p_this_DoG, int r, int c)
+{
+	double thr = 0;
+	double index = 0;
+	float this_val = p_this_DoG->at<float>(r, c);
+	double dxx = p_this_DoG->at<float>(r, c + 1) + p_this_DoG->at<float>(r, c - 1) - 2 * this_val;
+	double dyy = p_this_DoG->at<float>(r + 1, c) + p_this_DoG->at<float>(r - 1, c) - 2 * this_val;
+	double dxy = p_this_DoG->at<float>(r + 1, c + 1) - p_this_DoG->at<float>(r + 1, c - 1) +\
+						p_this_DoG->at<float>(r - 1, c + 1) - p_this_DoG->at<float>(r - 1, c - 1);
+	dxy /= 4.0;
+	double tr = dxx + dyy;
+	double det = dxx* dyy - pow(dxy, 2);
+	if (det < 0)
+	{
+		return true;
+	}
+	thr = pow(SIFT_HESSIAN_EDGE_THR + 1, 2) / SIFT_HESSIAN_EDGE_THR;
+	index = pow(tr, 2) / det;
 
+	if (index > thr)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
 bool _is_this_too_edge(Mat * p_this_gaus_im, int r, int c)
 {
 	double thr = 0;
@@ -285,8 +312,6 @@ bool _is_extremum(Mat * p_forward_DoG, Mat * p_this_DoG, Mat * p_Next_DoG, Mat *
 {
 	int dx = 0;
 	int dy = 0;
-	double thr = 0;
-	double index = 0;
 	double max_abs = 0;
 	if (r <= 0 || r >= p_this_DoG->rows - 1)
 	{
@@ -374,7 +399,7 @@ bool _is_extremum(Mat * p_forward_DoG, Mat * p_this_DoG, Mat * p_Next_DoG, Mat *
 	//	return false;
 	//}
 	// Check if it is a point in edge.
-	if (_is_this_too_edge(p_this_gaus_im, r, c))
+	if (_is_DoG_too_edge(p_this_gaus_im, r, c))
 	{
 		return false;
 	}

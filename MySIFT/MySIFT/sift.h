@@ -7,7 +7,7 @@ using namespace cv;
 
 /** default sigma for initial gaussian smoothing */
 #define SIFT_FIRST_SIGMA 1.6
-#define SIFT_OCTAVE 12
+#define SIFT_OCTAVE 6
 #define SIFT_SCALE_DEGREE 3 
 #define SIFT_HESSIAN_EDGE_THR 3
 #define SIFT_DoG_THR 3
