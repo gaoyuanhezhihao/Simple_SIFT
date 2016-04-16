@@ -2,6 +2,9 @@
 #include "opencv2\imgproc\imgproc.hpp"
 #include "opencv2\highgui\highgui.hpp"
 #include <iostream>
+#include <memory>
+#include <time.h>
+#include <stdlib.h>
 #define PI 3.1415927
 #define LITTLE 0.000001
 //bool create_init_img(Mat & src_img, Mat & dst_img, double sigma);
@@ -17,6 +20,290 @@ bool _get_dog_pyr(Mat * Gaussian_Octaves[SIFT_OCTAVE][SIFT_SCALE_DEGREE + 3], Ma
 bool _get_accurate_pos(Mat * p_forward_DoG, Mat * p_this_DoG, Mat * p_Next_DoG, int & x, int & y, double sigmas[3]);
 bool _get_feature_ori(feature & new_feature, Mat * pGaussian_img);
 bool _is_this_too_edge(Mat * p_this_gaus_im, int r, int c);
+int _calc_descriptor(Mat * Gaussian_Octaves[SIFT_OCTAVE][SIFT_SCALE_DEGREE + 3],\
+	list<feature> & feature_list, double sigmas[SIFT_SCALE_DEGREE + 3]);
+int _create_gauss_weight_mat(unsigned int mat_rows, unsigned int mat_cols, double * sigmas,\
+	unsigned int size_sigma, Mat ** gauss_w_array);
+int _normalize(double * descr, unsigned int sub_space_lenth, unsigned int sub_space_count);
+shared_ptr<Mat> _combine_img(Mat & f_img, Mat & f_img2);
+double _calc_similarity(double * p_descr1, double * p_descr2, int descr_size);
+int _calc_mag_angle_d(int bins_size, int x, int y, Mat * pGaussian_img, double & tmp_mag);
+Scalar _get_next_scalar();
+bool _draw_sift_desc(Mat & img, list<feature> & feature_list)
+{
+	double p2_x = 0, p2_y = 0;
+	double x = 0, y = 0;
+	auto it = feature_list.begin();
+	for (; it != feature_list.end(); ++it)
+	{
+		x = it->x * it->im_size;
+		y = it->y * it->im_size;
+		p2_x = x + it->ori_vec_mag / 10 * cos(it->ori_vec_angle);
+		p2_y = y + it->ori_vec_mag / 10 * sin(it->ori_vec_angle);
+		//cout << "scl:" << it->scl << endl;
+		//cout << "im_size: " << it->im_size << endl;
+		//arrowedLine(img, Point(x, y), Point(p2_x, p2_y), Scalar(255, 0, 0), 1);
+		circle(img, Point(x, y), it->scl * it->im_size, Scalar(0, 255, 0), 1, LINE_AA);
+	}
+	return true;
+}
+
+
+Scalar _get_next_scalar()
+{
+	static bool is_first = true;
+	if (is_first)
+	{
+		is_first = false;
+		srand(time(NULL));
+	}
+	int B = rand() % 255;
+	int G = rand() % 255;
+	int R = rand() % 255;
+	return Scalar(B, G, R);
+}
+double _calc_similarity(double * p_descr1, double * p_descr2, int descr_size)
+{
+	int i = 0;
+	double simi = 0;
+	for (i = 0; i < descr_size; ++i)
+	{
+		if (p_descr1[i] > 1)
+		{
+			cout << "bug" << endl;
+		}
+		if (p_descr2[i] > 1)
+		{
+			cout << "bug" << endl;
+		}
+		simi += p_descr1[i] * p_descr2[i];
+	}
+	return simi;
+}
+shared_ptr<Mat> _combine_img(Mat & f_img, Mat & f_img2)
+{
+	Size sz1 = f_img.size();
+	Size sz2 = f_img2.size();
+	shared_ptr<Mat> p_img3(new Mat(sz1.height, sz1.width + sz2.width, CV_8UC3));
+	Mat left(*p_img3, Rect(0, 0, sz1.width, sz1.height));
+	f_img.copyTo(left);
+	Mat right(*p_img3, Rect(sz1.width, 0, sz2.width, sz2.height));
+	f_img2.copyTo(right);
+	return p_img3;
+}
+int match_feature(Mat & f_img, Mat & f_img2, list<feature> & feature_list1, list<feature> & feature_list2, int descr_size, const char out_file_name[])
+{
+	struct sort_match{
+		bool operator()(const pair<double, pair<Point, Point> > & left, pair<double, pair<Point, Point> > & right)
+		{
+			return left.first > right.first;
+		}
+	};
+	auto it1 = feature_list1.begin();
+	auto it2 = feature_list2.begin();
+	auto it_2_max = feature_list2.begin();
+	double max_similarity = 0;
+	double tmp_similarity = 0;
+	int x1 = 0, y1 = 0, x2 = 0, y2 = 0;
+	shared_ptr<Mat> pCombined_img = _combine_img(f_img, f_img2);
+	vector<pair<double, pair<Point, Point> > > match_pairs;
+	for (; it1 != feature_list1.end(); ++it1)
+	{
+		max_similarity = 0;
+		x1 = it1->x * it1->im_size;
+		y1 = it1->y * it1->im_size;
+		for (it2 = feature_list2.begin(); it2 != feature_list2.end(); ++it2)
+		{
+			tmp_similarity = _calc_similarity(it1->descr, it2->descr, descr_size);
+			if (max_similarity < tmp_similarity)
+			{
+				x2 = it2->x * it2->im_size;
+				y2 = it2->y * it2->im_size;
+				it_2_max = it2;
+				max_similarity = tmp_similarity;
+			}
+		}
+		assert(x2 != 0);
+		assert(y2 != 0);
+		x2 += f_img.cols;
+		//arrowedLine(*pCombined_img, Point(x1, y1), Point(x2, y2), Scalar(255, 0, 0), 1);
+		match_pairs.push_back(pair<double, pair<Point, Point>>(max_similarity, pair<Point, Point>(Point(x1, y1), Point(x2, y2))));
+	}
+	sort(match_pairs.begin(), match_pairs.end(), sort_match());
+	int i = 0;
+	for (i = 0; i < SIFT_SHOW_AMOUNT; ++i)
+	{
+		arrowedLine(*pCombined_img, match_pairs[i].second.first, match_pairs[i].second.second, _get_next_scalar(), 3);
+	}
+	Mat left(*pCombined_img, Rect(0, 0, f_img.cols, f_img.rows));
+	Mat right(*pCombined_img, Rect(f_img2.cols, 0, f_img2.cols, f_img2.rows));
+	_draw_sift_desc(left, feature_list1);
+	_draw_sift_desc(right, feature_list2);
+	imwrite(out_file_name, *pCombined_img);
+	waitKey(0);
+	return 0;
+}
+int _normalize(double * descr, unsigned int sub_space_lenth, unsigned int sub_space_count)
+{
+	int i = 0;
+	int j = 0;
+	double sum = 0;
+	for (i = 0; i < sub_space_count; ++i)
+	{
+		sum = 0;
+		for (j = 0; j < sub_space_lenth; ++j)
+		{
+			sum += descr[i*sub_space_lenth + j] * descr[i*sub_space_lenth + j];
+		}
+		sum = sqrt(sum);
+		//if (descr[i*sub_space_lenth + j] > 1000)
+		//{
+		//	cout << "bug" << endl;
+		//}
+		for (j = 0; j < sub_space_lenth; ++j)
+		{
+			descr[i*sub_space_lenth + j] /= sum;
+		}
+	}
+	for (i = 0; i < sub_space_count; ++i)
+	{
+		for (j = 0; j < sub_space_lenth; ++j)
+		{
+			if (descr[i*sub_space_lenth + j]> 1)
+			{
+				cout << "bug" << endl;
+			}
+		}
+	}
+	return 0;
+}
+
+int _create_gauss_weight_mat(unsigned int mat_rows, unsigned int mat_cols, double * sigmas,\
+	unsigned int size_sigma, Mat ** gauss_w_array)
+{
+	int i = 0;
+	int r = 0;
+	int c = 0;
+	double sigma = 0;
+	double dr = 0;
+	double dc = 0;
+	double center_r = (mat_rows - 1) / 2;
+	double center_c = (mat_cols - 1) / 2;
+	assert(mat_rows > 0);
+	assert(mat_cols > 0);
+	assert(size_sigma > 1);
+	for (i = 0; i < size_sigma; ++i)
+	{
+		sigma = sigmas[i];
+		for (r = 0; r < mat_rows; ++r)
+		{
+			for (c = 0; c < mat_cols; ++c)
+			{
+				dr = abs(r - center_r);
+				dc = abs(c - center_c);
+				gauss_w_array[i]->at<double>(r, c) = exp(-(dr*dr + dc*dc)/ (2*sigma*sigma));
+			}
+		}
+	}
+	return 0;
+}
+int _calc_descriptor(Mat * Gaussian_Octaves[SIFT_OCTAVE][SIFT_SCALE_DEGREE + 3], \
+	list<feature> & feature_list, double sigmas[SIFT_SCALE_DEGREE + 3])
+{
+	// generate 18*18 neigbor matrix.
+	Mat neib(Size(SIFT_DESCRIPTOR_MAT_SIZE + 2, SIFT_DESCRIPTOR_MAT_SIZE+2), CV_64FC1);
+	// pre-create gaussian weight matrix.
+	Mat * gauss_w_array[SIFT_SCALE_DEGREE + 2];
+	int i = 0;
+	int j = 0;
+	for (i = 0; i < SIFT_SCALE_DEGREE + 2; ++i)
+	{
+		gauss_w_array[i] = new Mat(Size(SIFT_DESCRIPTOR_MAT_SIZE + 2, SIFT_DESCRIPTOR_MAT_SIZE + 2), CV_64FC1);
+	}
+	_create_gauss_weight_mat(SIFT_DESCRIPTOR_MAT_SIZE + 2, SIFT_DESCRIPTOR_MAT_SIZE + 2, sigmas,\
+		SIFT_SCALE_DEGREE + 2, gauss_w_array);
+	// process every feature point.
+	auto it = feature_list.begin();
+	double x0 = 0;
+	double y0 = 0;
+	int r = 0;
+	int c = 0;
+	double x = 0;
+	double y = 0;
+	double real_x = 0;
+	double real_y = 0;
+	double ori_angle = 0;
+	unsigned int a_x, a_y, b_x, b_y, c_x, c_y, d_x, d_y;
+	unsigned int oct = 0, im_id = 0;
+	double grad_mag = 0;
+	for (; it != feature_list.end(); ++it)
+	{
+		// get neib image for every sift descriptor point.
+		x0 = it->x;
+		y0 = it->y;
+		ori_angle = it->ori_vec_angle;
+		oct = it->gauss_octave_id;
+		im_id = it->gauss_im_id;
+		assert(im_id > 0);
+		for (r = 0; r < SIFT_DESCRIPTOR_MAT_SIZE + 2; ++r)
+		{
+			for (c = 0; c < SIFT_DESCRIPTOR_MAT_SIZE + 2; ++c)
+			{
+				x = c - 8.5;
+				y = r - 8.5;
+				// transform the coordinate back to gauss image.
+				real_x = x*cos(ori_angle) - y * sin(ori_angle) + x0;
+				real_y = x*sin(ori_angle) + y * cos(ori_angle) + y0;
+				if (real_y <= 0.5)
+				{
+					real_y = 0.51;
+				}
+				if (real_x <= 0.5)
+				{
+					real_x = 0.51;
+				}
+				// find the four neighbors.
+				a_x = cvRound(real_x - 0.5);
+				a_x = a_x >= Gaussian_Octaves[oct][im_id]->cols ? Gaussian_Octaves[oct][im_id]->cols - 1 : a_x;
+				a_y = cvRound(real_y - 0.5);
+				a_y = a_y >= Gaussian_Octaves[oct][im_id]->rows ? Gaussian_Octaves[oct][im_id]->rows - 1 : a_y;
+				b_x = cvRound(real_x + 0.5);
+				b_x = b_x >= Gaussian_Octaves[oct][im_id]->cols ? Gaussian_Octaves[oct][im_id]->cols - 1 : b_x;
+				b_y = cvRound(real_y - 0.5);
+				b_y = b_y >= Gaussian_Octaves[oct][im_id]->rows ? Gaussian_Octaves[oct][im_id]->rows - 1 : b_y;
+				c_x = cvRound(real_x - 0.5);
+				c_x = c_x >= Gaussian_Octaves[oct][im_id]->cols ? Gaussian_Octaves[oct][im_id]->cols - 1 : c_x;
+				c_y = cvRound(real_y + 0.5);
+				c_y = c_y >= Gaussian_Octaves[oct][im_id]->rows ? Gaussian_Octaves[oct][im_id]->rows -1 : c_y;
+				d_x = cvRound(real_x + 0.5);
+				d_x = d_x >= Gaussian_Octaves[oct][im_id]->cols ? Gaussian_Octaves[oct][im_id]->cols -1: d_x;
+				d_y = cvRound(real_y + 0.5);
+				d_y = d_y >= Gaussian_Octaves[oct][im_id]->rows ? Gaussian_Octaves[oct][im_id]->rows -1: d_y;
+				// interpolate the pixel in (r, c)
+				neib.at<double>(r, c) = (Gaussian_Octaves[oct][im_id]->at<float>(a_y, a_x) + \
+					Gaussian_Octaves[oct][im_id]->at<float>(b_y, b_x) + Gaussian_Octaves[oct][im_id]->at<float>(c_y, c_x) + \
+					Gaussian_Octaves[oct][im_id]->at<float>(d_y, d_x))/4;
+			}
+		}
+		// get gradient hist of the SIFT_DESCRIPTOR_SUB_SPACE_SIZE sub blocks.
+		int sub_space_id = 0;
+		int bin_id = 0;
+		double tmp_mag = 0;
+		double w = 0;
+		for (r = 1; r <= SIFT_DESCRIPTOR_MAT_SIZE; ++r)
+		{
+			for (c = 1; c <= SIFT_DESCRIPTOR_MAT_SIZE; ++c)
+			{
+				sub_space_id = (r-1) / SIFT_DESCRIPTOR_SUB_SPACE_SIZE * SIFT_DESCRIPTOR_SUB_SPACES_ROW_COUNT + (c-1) / SIFT_DESCRIPTOR_SUB_SPACE_SIZE;
+				bin_id = _calc_mag_angle_d(SIFT_DESCRIPTOR_ORI_ANGLE_BIN, c, r, &neib, tmp_mag);
+				w = gauss_w_array[im_id]->at<double>(r, c);
+				it->descr[bin_id + sub_space_id * SIFT_DESCRIPTOR_SUB_SPACE_SIZE] += tmp_mag * w;
+			}
+		}
+		_normalize(it->descr, SIFT_DESCRIPTOR_SUB_SPACE_SIZE, SIFT_DESCRIPTOR_SUB_SPACES_ROW_COUNT * SIFT_DESCRIPTOR_SUB_SPACES_ROW_COUNT);
+	}
+	return 0;
+}
 
 bool _is_DoG_too_edge(Mat * p_this_DoG, int r, int c)
 {
@@ -115,7 +402,7 @@ int get_sift_descriptor(Mat & img, list<feature> &feature_list)
 	_create_gaus_pyr(img, Gaussian_Octaves, SIFT_OCTAVE, p_sigmas);
 	_get_dog_pyr(Gaussian_Octaves, DoG_octaves);
 	_get_extrema(DoG_octaves, Gaussian_Octaves, feature_list, sigmas);
-	
+	_calc_descriptor(Gaussian_Octaves, feature_list, sigmas);
 	_erase_gaus_octaves(Gaussian_Octaves, SIFT_OCTAVE, SIFT_SCALE_DEGREE+3);
 	_erase_dog_octaves(DoG_octaves, SIFT_OCTAVE, SIFT_SCALE_DEGREE+2);
 	return 0;
@@ -148,7 +435,7 @@ bool _get_extrema(Mat * DoG_octaves[SIFT_OCTAVE][SIFT_SCALE_DEGREE + 2], Mat *Ga
 						{
 							// record this new feature point.
 							im_size = double(DoG_octaves[0][0]->cols) / double(DoG_octaves[oct][i]->cols);
-							feature new_feature(x_extr, y_extr, sigmas[i], im_size);
+							feature new_feature(x_extr, y_extr, sigmas[i], im_size, oct, i);
 							// get the hist of this new feature.
 							if (_get_feature_ori(new_feature, Gaussian_Octaves[oct][i]))
 							{
@@ -206,7 +493,38 @@ bool _get_feature_ori(feature & new_feature, Mat * pGaussian_img)
 	}
 	new_feature.ori_vec_angle = (bin_id + 1) * 2 * PI / SIFT_ORI_HIST_BINS;
 	new_feature.ori_vec_mag = tmp_mag;
+	if (tmp_mag < SIFT_MAG_THRES)
+	{
+		return false;
+	}
 	return true;
+}
+/* double version of _calc_mag_angle*/
+int _calc_mag_angle_d(int bins_size, int x, int y, Mat * pGaussian_img, double & tmp_mag)
+{
+	double dx = 2.0 *pGaussian_img->at<double>(y, x + 1) + pGaussian_img->at<double>(y + 1, x + 1) + pGaussian_img->at<double>(y - 1, x + 1);
+	dx -= 2.0 * pGaussian_img->at<double>(y, x - 1) + pGaussian_img->at<double>(y + 1, x - 1) + pGaussian_img->at<double>(y - 1, x - 1);
+	double dy = 2.0 * pGaussian_img->at<double>(y + 1, x) + pGaussian_img->at<double>(y + 1, x + 1) + pGaussian_img->at<double>(y + 1, x - 1);
+	dy -= 2.0 * pGaussian_img->at<double>(y - 1, x) + pGaussian_img->at<double>(y - 1, x + 1) + pGaussian_img->at<double>(y - 1, x - 1);
+	tmp_mag = sqrt(dx*dx + dy*dy);
+	tmp_mag += LITTLE;
+	// get the angle of (dx, dy) vector.
+	double angle = 0;
+	int bin_id = 0;
+	if (dy > 0)
+	{
+		angle = acos(dx / tmp_mag);
+	}
+	else
+	{
+		angle = 2 * PI - acos(dx / tmp_mag);
+	}
+	bin_id = angle / (2 * PI / bins_size);
+	if (bin_id > bins_size || bin_id < 0)
+	{
+		throw;
+	}
+	return bin_id;
 }
 int _calc_mag_angle(int bins_size, int x, int y, Mat * pGaussian_img, double & tmp_mag)
 {
@@ -399,7 +717,15 @@ bool _is_extremum(Mat * p_forward_DoG, Mat * p_this_DoG, Mat * p_Next_DoG, Mat *
 	//	return false;
 	//}
 	// Check if it is a point in edge.
-	if (_is_DoG_too_edge(p_this_gaus_im, r, c))
+	//if (_is_DoG_too_edge(p_this_gaus_im, r, c))
+	//{
+	//	return false;
+	//}
+	//else
+	//{
+	//	return true;
+	//}
+	if (_is_this_too_edge(p_this_gaus_im, r, c))
 	{
 		return false;
 	}
