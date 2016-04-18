@@ -1,4 +1,4 @@
-﻿Build started 2016/4/16 11:21:13.
+﻿Build started 2016/4/16 16:52:26.
      1>Project "G:\Study\Computer Vision\Feature\SIFT\Code\MySIFT\MySIFT\MySIFT\MySIFT.vcxproj" on node 2 (Build target(s)).
      1>ClCompile:
          D:\Program_Programming\VS2013_Community\VC\bin\x86_amd64\CL.exe /c /IG:\Study\OpenCV3\opencv\build\x64\vc12\..\..\include /Zi /nologo /W3 /WX- /sdl /O2 /Oi /GL /D _MBCS /Gm- /EHsc /MD /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Fo"x64\Release\\" /Fd"x64\Release\vc120.pdb" /Gd /TP /errorReport:prompt sift.cpp
@@ -8,35 +8,26 @@
      1>G:\Study\OpenCV3\opencv\build\include\opencv2/core/utility.hpp : warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
      1>sift.cpp(46): warning C4244: 'argument' : conversion from 'double' to 'int', possible loss of data
      1>sift.cpp(58): warning C4244: 'argument' : conversion from 'time_t' to 'unsigned int', possible loss of data
-     1>sift.cpp(113): warning C4244: '=' : conversion from 'double' to 'int', possible loss of data
-     1>sift.cpp(114): warning C4244: '=' : conversion from 'double' to 'int', possible loss of data
-     1>sift.cpp(120): warning C4244: '=' : conversion from 'double' to 'int', possible loss of data
-     1>sift.cpp(121): warning C4244: '=' : conversion from 'double' to 'int', possible loss of data
-     1>sift.cpp(151): warning C4018: '<' : signed/unsigned mismatch
-     1>sift.cpp(154): warning C4018: '<' : signed/unsigned mismatch
-     1>sift.cpp(163): warning C4018: '<' : signed/unsigned mismatch
-     1>sift.cpp(168): warning C4018: '<' : signed/unsigned mismatch
-     1>sift.cpp(170): warning C4018: '<' : signed/unsigned mismatch
-     1>sift.cpp(195): warning C4018: '<' : signed/unsigned mismatch
-     1>sift.cpp(198): warning C4018: '<' : signed/unsigned mismatch
-     1>sift.cpp(200): warning C4018: '<' : signed/unsigned mismatch
-     1>sift.cpp(267): warning C4018: '>=' : signed/unsigned mismatch
-     1>sift.cpp(269): warning C4018: '>=' : signed/unsigned mismatch
-     1>sift.cpp(271): warning C4018: '>=' : signed/unsigned mismatch
-     1>sift.cpp(273): warning C4018: '>=' : signed/unsigned mismatch
-     1>sift.cpp(275): warning C4018: '>=' : signed/unsigned mismatch
-     1>sift.cpp(277): warning C4018: '>=' : signed/unsigned mismatch
-     1>sift.cpp(279): warning C4018: '>=' : signed/unsigned mismatch
-     1>sift.cpp(281): warning C4018: '>=' : signed/unsigned mismatch
-     1>sift.cpp(381): warning C4244: 'argument' : conversion from 'double' to 'int', possible loss of data
-     1>sift.cpp(382): warning C4244: 'argument' : conversion from 'double' to 'int', possible loss of data
-     1>sift.cpp(460): warning C4244: 'initializing' : conversion from 'double' to 'int', possible loss of data
-     1>sift.cpp(522): warning C4244: '=' : conversion from 'double' to 'int', possible loss of data
-     1>sift.cpp(548): warning C4244: '=' : conversion from 'double' to 'int', possible loss of data
-     1>sift.cpp(563): warning C4244: 'initializing' : conversion from 'double' to 'float', possible loss of data
-     1>sift.cpp(579): warning C4244: 'initializing' : conversion from 'double' to 'float', possible loss of data
-     1>sift.cpp(591): warning C4244: '+=' : conversion from 'float' to 'int', possible loss of data
-     1>sift.cpp(592): warning C4244: '+=' : conversion from 'float' to 'int', possible loss of data
+     1>sift.cpp(118): warning C4244: '=' : conversion from 'double' to 'int', possible loss of data
+     1>sift.cpp(119): warning C4244: '=' : conversion from 'double' to 'int', possible loss of data
+     1>sift.cpp(125): warning C4244: '=' : conversion from 'double' to 'int', possible loss of data
+     1>sift.cpp(126): warning C4244: '=' : conversion from 'double' to 'int', possible loss of data
+     1>sift.cpp(397): warning C4244: 'argument' : conversion from 'double' to 'int', possible loss of data
+     1>sift.cpp(398): warning C4244: 'argument' : conversion from 'double' to 'int', possible loss of data
+     1>sift.cpp(583): warning C4244: 'argument' : conversion from 'double' to 'int', possible loss of data
+     1>sift.cpp(584): warning C4244: 'argument' : conversion from 'double' to 'int', possible loss of data
+     1>sift.cpp(585): warning C4244: 'argument' : conversion from 'double' to 'int', possible loss of data
+     1>sift.cpp(588): warning C4244: 'argument' : conversion from 'double' to 'int', possible loss of data
+     1>sift.cpp(589): warning C4244: 'argument' : conversion from 'double' to 'int', possible loss of data
+     1>sift.cpp(590): warning C4244: 'argument' : conversion from 'double' to 'int', possible loss of data
+     1>sift.cpp(591): warning C4244: 'argument' : conversion from 'double' to 'int', possible loss of data
+     1>sift.cpp(593): warning C4244: 'argument' : conversion from 'double' to 'int', possible loss of data
+     1>sift.cpp(594): warning C4244: 'argument' : conversion from 'double' to 'int', possible loss of data
+     1>sift.cpp(595): warning C4244: 'argument' : conversion from 'double' to 'int', possible loss of data
+     1>sift.cpp(596): warning C4244: 'argument' : conversion from 'double' to 'int', possible loss of data
+     1>sift.cpp(597): warning C4244: 'argument' : conversion from 'double' to 'int', possible loss of data
+     1>sift.cpp(598): warning C4244: 'argument' : conversion from 'double' to 'int', possible loss of data
+     1>sift.cpp(599): warning C4244: 'argument' : conversion from 'double' to 'int', possible loss of data
        Link:
          D:\Program_Programming\VS2013_Community\VC\bin\x86_amd64\link.exe /ERRORREPORT:PROMPT /OUT:"G:\Study\Computer Vision\Feature\SIFT\Code\MySIFT\MySIFT\x64\Release\MySIFT.exe" /NOLOGO /LIBPATH:G:\Study\OpenCV3\opencv\build\x64\vc12\lib opencv_world310.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"G:\Study\Computer Vision\Feature\SIFT\Code\MySIFT\MySIFT\x64\Release\MySIFT.pdb" /OPT:REF /OPT:ICF /LTCG /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"G:\Study\Computer Vision\Feature\SIFT\Code\MySIFT\MySIFT\x64\Release\MySIFT.lib" /MACHINE:X64 x64\Release\main.obj
          x64\Release\sift.obj
@@ -47,4 +38,4 @@
 
 Build succeeded.
 
-Time Elapsed 00:00:06.23
+Time Elapsed 00:00:06.71

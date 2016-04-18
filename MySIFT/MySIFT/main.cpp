@@ -23,10 +23,10 @@ int main(int argc, char** argv)
 	Mat img2_gray;
 	cvtColor(img1_color, img1_gray, CV_BGR2GRAY);
 	cvtColor(img2_color, img2_gray, CV_BGR2GRAY);
-	Mat f_img(img1_gray.size(), CV_32FC1);
-	Mat f_img2(img2_gray.size(), CV_32FC1);
-	img1_gray.convertTo(f_img, CV_32FC1);
-	img2_gray.convertTo(f_img2, CV_32FC1);
+	Mat f_img(img1_gray.size(), CV_64FC1);
+	Mat f_img2(img2_gray.size(), CV_64FC1);
+	img1_gray.convertTo(f_img, CV_64FC1);
+	img2_gray.convertTo(f_img2, CV_64FC1);
 	//imwrite("f_img.jpg", f_img);
 
 	list<feature> feature_list1;

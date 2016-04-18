@@ -10,7 +10,7 @@ using namespace cv;
 #define SIFT_OCTAVE 6
 #define SIFT_SCALE_DEGREE 3 
 #define SIFT_HESSIAN_EDGE_THR 3
-#define SIFT_DoG_THR 3
+#define SIFT_DoG_THR 1
 /* default number of bins in histogram for orientation assignment */
 #define SIFT_ORI_HIST_BINS 36
 /* determines gaussian sigma for orientation assignment */
@@ -22,8 +22,8 @@ using namespace cv;
 #define EXTREMA_DIST_THR 0.1
 #define SIFT_EXTREMA_HARRIS 0.5
 #define SIFT_DESCRIPTOR_MAT_SIZE 16
-#define SIFT_DESCRIPTOR_SUB_SPACES_ROW_COUNT 2 // subspace size if 2*2 blocks.
-#define SIFT_DESCRIPTOR_SUB_SPACE_SIZE (SIFT_DESCRIPTOR_MAT_SIZE/ SIFT_DESCRIPTOR_SUB_SPACES_ROW_COUNT)
+#define SIFT_DESCRIPTOR_SUB_SPACES_ROW_COUNT 4 // subspace size if 4*4 blocks.
+#define SIFT_DESCRIPTOR_SUB_SPACE_WIDTH (SIFT_DESCRIPTOR_MAT_SIZE/ SIFT_DESCRIPTOR_SUB_SPACES_ROW_COUNT)
 #define SIFT_DESCRIPTOR_ORI_ANGLE_BIN 8
 #define SIFT_DESCR_SIZE (SIFT_DESCRIPTOR_ORI_ANGLE_BIN * SIFT_DESCRIPTOR_SUB_SPACES_ROW_COUNT * SIFT_DESCRIPTOR_SUB_SPACES_ROW_COUNT)
 #define SIFT_SHOW_AMOUNT 50
@@ -36,7 +36,7 @@ struct feature
 	double ori_vec_angle;                    /**< orientation of a Lowe-style feature */
 	double ori_vec_mag;
 	double descr[FEATURE_MAX_D];   /**< descriptor */
-	int desc_size{ 32 };
+	int desc_size{ FEATURE_MAX_D };
 	double im_size;
 	int gauss_octave_id;
 	int gauss_im_id;
@@ -49,7 +49,7 @@ struct feature
 		int i = 0;
 		for (i = 0; i < FEATURE_MAX_D; ++i)
 		{
-			descr[i] = 0;
+			descr[i] = 0.0;
 		}
 	}
 };
